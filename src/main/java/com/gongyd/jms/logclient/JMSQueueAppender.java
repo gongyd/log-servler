@@ -10,7 +10,6 @@ import org.apache.activemq.ActiveMQConnectionFactory;
 import org.apache.log4j.Appender;
 import org.apache.log4j.AppenderSkeleton;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PatternLayout;
 import org.apache.log4j.spi.LoggingEvent;
 
 import com.gongyd.jms.LoggingEventWrapper;
@@ -41,11 +40,8 @@ public boolean requiresLayout() {
 
 @Override
 protected synchronized void append(LoggingEvent event) {
-
    try {
-
-     ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(
-					this.brokerUri);
+     ActiveMQConnectionFactory connectionFactory = new ActiveMQConnectionFactory(this.brokerUri);
      connectionFactory.setUserName(userName);
      connectionFactory.setPassword(password);
      // Create a Connection
@@ -60,6 +56,7 @@ protected synchronized void append(LoggingEvent event) {
 
      // Create a MessageProducer from the Session to the Topic or Queue
      MessageProducer producer = session.createProducer(destination);
+     //设置队列不持久化，以提高系统性能
      producer.setDeliveryMode(DeliveryMode.NON_PERSISTENT);
 
      ObjectMessage message = session.createObjectMessage(new LoggingEventWrapper(event));
