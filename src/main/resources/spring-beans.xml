@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xmlns:context="http://www.springframework.org/schema/context"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd">
+    
+    <bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+		<property name="brokerURL" value="tcp://localhost:61616"></property>
+		<property name="userName" value="erp"/>
+        <property name="password" value="erp"/>
+	</bean>
+
+	<!-- 采用TCP长连接方式, 避免每次建立短连接需要的额外工作时间 -->
+	<bean id="pooledConnectionFactory" class="org.apache.activemq.pool.PooledConnectionFactoryBean">
+		<property name="connectionFactory" ref="connectionFactory"></property>
+		<property name="maxConnections" value="100"></property> 
+		<property name="maximumActive" value="100"></property>
+	</bean>
+
+	<bean id="tcpQueue" class="org.apache.activemq.command.ActiveMQQueue">
+		<property name="physicalName" value="ERP.DEMO"></property>
+	</bean>
+
+
+    <bean id="messageConverter" class="com.gongyd.jms.service.impl.JmsMessageConverter" />
+
+	<bean id="messageListener" class="com.gongyd.jms.adapter.JmsMessageListenerAdapter">
+		<constructor-arg>
+			<bean class="com.gongyd.jms.service.impl.JmsMessageConsumer">
+			</bean>
+		</constructor-arg>
+		<property name="defaultListenerMethod" value="consume" />
+		 <property name="messageConverter" ref="messageConverter" /> 
+	</bean>
+
+	<bean id="listenerContainer" class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+		<property name="connectionFactory" ref="connectionFactory" />
+		<property name="destination" ref="tcpQueue" />
+		<property name="messageListener" ref="messageListener" />
+	</bean>
+	
+	<bean id="destination" class="org.apache.activemq.command.ActiveMQTopic">
+        <constructor-arg name="name" value="demo" />
+    </bean>
+    
+    <!-- define the message-listener to receive and dipose log data. -->
+    <bean id="messageListenerTopic" class="com.gongyd.jms.logserver.LogListener" />
+    
+    <bean id="jmsContainer"
+        class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory" />
+        <property name="destination" ref="destination" />
+        <property name="messageListener" ref="messageListenerTopic" />
+    </bean>
+</beans>
